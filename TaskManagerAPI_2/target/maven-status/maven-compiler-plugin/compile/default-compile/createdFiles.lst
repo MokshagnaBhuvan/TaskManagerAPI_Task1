@@ -1,0 +1,6 @@
+com\mycompany\taskmanagerapi2\TaskManagerAPI_2.class
+com\mycompany\taskmanagerapi2\model\Task.class
+com\mycompany\taskmanagerapi2\service\TaskService.class
+com\mycompany\taskmanagerapi2\model\TaskExecution.class
+com\mycompany\taskmanagerapi2\repository\TaskRepository.class
+com\mycompany\taskmanagerapi2\controller\TaskController.class
