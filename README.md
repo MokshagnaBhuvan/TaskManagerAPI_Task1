@@ -1,85 +1,124 @@
+```markdown
 # Task Manager API (Task1)
 
-A lightweight, production-ready RESTful Task Management API built with Java, Spring Boot, Maven and MongoDB. This service provides endpoints to create, read, update and delete tasks, and is designed for easy local development with Postman for manual testing.
+A lightweight, production-ready RESTful Task Management API built with Java, Spring Boot, Maven and MongoDB.  
+This README is a clear, practical guide for developers who want to run, test and extend the service locally or in containers.
+
+Repository
+- GitHub: https://github.com/MokshagnaBhuvan/TaskManagerAPI_Task1
 
 Quick summary
-- Language: Java
+- Language: Java (recommended: Java 17)
 - Build: Maven
 - Framework: Spring Boot
 - Database: MongoDB
-- Manual testing / API exploration: Postman
-- Repo: MokshagnaBhuvan/TaskManagerAPI_Task1
+- Local testing: Postman / curl
+- Structure: controller -> service -> repository -> model
 
 Table of contents
-- Features
-- Tech stack
-- Prerequisites
-- Installation & local run
-- Configuration
-- Running with Docker (MongoDB)
-- API usage (endpoints, examples)
-- Postman collection
-- Data model
-- Error handling & validation
-- Tests
-- Contributing
-- Troubleshooting
-- License & contact
+- [Features](#features)
+- [Tech stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Quick start — run locally](#quick-start---run-locally)
+- [Configuration](#configuration)
+- [Run with Docker (MongoDB)](#run-with-docker-mongodb)
+- [API reference (examples)](#api-reference-examples)
+- [Data model](#data-model)
+- [Validation & Error responses](#validation--error-responses)
+- [Testing](#testing)
+- [Dockerizing the app](#dockerizing-the-app)
+- [CI / CD suggestions](#ci--cd-suggestions)
+- [Postman & OpenAPI](#postman--openapi)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License & Contact](#license--contact)
 
-Features
-- CRUD for tasks (Create / Read / Update / Delete)
-- Validation on input payloads
-- Timestamping (createdAt / updatedAt)
-- Pagination & filtering (basic) — extendable
-- Clean layered architecture: controller -> service -> repository
+---
+
+## Features
+- Full CRUD for tasks
+- Input validation using Bean Validation (javax.validation)
+- createdAt / updatedAt timestamps
+- Basic pagination & filtering support
+- Clear layered architecture (Controller → Service → Repository)
 - MongoDB persistence with Spring Data MongoDB
+- Ready for adding authentication (JWT/OAuth) and rate-limiting
 
-Tech stack
-- Java (LTS recommended: Java 17)
-- Maven (build & dependency management)
-- Spring Boot (web, validation, data-mongodb)
-- Spring Data MongoDB (data access)
-- MongoDB (document database)
-- Postman (API exploration & collection import)
+## Tech stack
+- Java 17 (recommended; project may be compatible with Java 11)
+- Spring Boot (Web, Validation, Data MongoDB)
+- Maven
+- MongoDB (local, hosted, or containerized)
+- JUnit 5 + Mockito for tests
+- Optional: Testcontainers for integration tests with MongoDB
 
-Prerequisites
-- Java 17 (or Java 11 if project configured for 11) installed and JAVA_HOME set
-- Maven (3.6+)
-- MongoDB running locally or accessible remotely
-- Postman (optional, for manual testing)
+## Prerequisites
+- Java 17+ and JAVA_HOME set
+- Maven 3.6+
+- MongoDB (local, remote or Docker)
+- Git
+- (Optional) Docker & Docker Compose
+- (Optional) Postman for manual API testing
 
-Installation & local run (fast)
-1. Clone the repository
-   git clone https://github.com/MokshagnaBhuvan/TaskManagerAPI_Task1.git
-   cd TaskManagerAPI_Task1
+---
 
-2. Configure MongoDB connection (see Configuration below)
+## Quick start — run locally
+
+1. Clone repository
+```bash
+git clone https://github.com/MokshagnaBhuvan/TaskManagerAPI_Task1.git
+cd TaskManagerAPI_Task1
+```
+
+2. Configure MongoDB (see [Configuration](#configuration)). For quick testing you can run MongoDB in Docker (see below).
 
 3. Build the project
-   mvn clean package
+```bash
+mvn clean package -DskipTests=false
+```
 
 4. Run the application
-   mvn spring-boot:run
-   OR
-   java -jar target/<artifact-name>.jar
+```bash
+# from Maven
+mvn spring-boot:run
 
-By default the app runs on port 8080 (configurable).
+# or via JAR
+java -jar target/<artifact-name>.jar
+```
 
-Configuration
-Spring Boot configuration is typically in src/main/resources/application.properties or application.yml. Example application.properties to connect to local MongoDB:
+Default server port: `8080` (configurable)
 
+---
+
+## Configuration
+
+Primary configuration locations:
+- `src/main/resources/application.properties` or
+- `src/main/resources/application.yml`
+
+Recommended properties (example `application.properties`):
+```
 spring.data.mongodb.uri=mongodb://localhost:27017/taskmanagerdb
 spring.profiles.active=local
 server.port=8080
-# (Optional) logging.level.root=INFO
+```
 
-If your repository uses environment variables, set them before launching:
-- MONGODB_URI (example): mongodb://username:password@host:27017/taskmanagerdb
-- SERVER_PORT (optional): 8080
+Environment variable alternatives:
+- `SPRING_DATA_MONGODB_URI` — override MongoDB URI
+- `SERVER_PORT` — override port
 
-Running MongoDB locally with Docker (recommended for quick setup)
-Create a quick docker-compose.yml to run MongoDB:
+Production Mongo example:
+```
+spring.data.mongodb.uri=mongodb://username:password@host:27017/taskmanagerdb
+```
 
+---
+
+## Run with Docker (MongoDB)
+
+Use a small `docker-compose.yml` to run MongoDB locally for development:
+
+```yaml
 version: "3.8"
 services:
   mongo:
@@ -95,77 +134,89 @@ services:
 
 volumes:
   mongo-data:
+```
 
-Then:
+Start:
+```bash
 docker compose up -d
-And point spring.data.mongodb.uri to mongodb://localhost:27017/taskmanagerdb
+```
 
-API Usage
-Below are the common endpoints and examples. Adjust paths if your project uses different base paths or versions (e.g., /api/v1).
+Set `spring.data.mongodb.uri=mongodb://localhost:27017/taskmanagerdb` and start the app.
 
-Base URL (default):
-http://localhost:8080
+---
 
-Common endpoints
-- Create a task
-  POST /api/tasks
-  Request JSON:
-  {
-    "title": "Finish README",
-    "description": "Write the README for TaskManagerAPI",
-    "dueDate": "2025-11-01T12:00:00Z",
-    "priority": "MEDIUM",
-    "completed": false
-  }
+## API reference (examples)
 
-  Success response (201 Created):
-  {
-    "id": "653a1e3b...",
-    "title": "Finish README",
-    "description": "...",
-    "dueDate": "2025-11-01T12:00:00Z",
-    "priority": "MEDIUM",
-    "completed": false,
-    "createdAt": "2025-10-20T18:00:00Z",
-    "updatedAt": "2025-10-20T18:00:00Z"
-  }
+Base URL (default): `http://localhost:8080`  
+Base path used: `/api/tasks` (update if your controllers use a different base path)
 
-- Get a list of tasks (with optional pagination/filter)
-  GET /api/tasks?page=0&size=20&completed=false
+### Create a Task
+- Method: `POST`
+- URL: `/api/tasks`
+- Request JSON:
+```json
+{
+  "title": "Finish README",
+  "description": "Write the README for TaskManagerAPI",
+  "dueDate": "2025-11-01T12:00:00Z",
+  "priority": "MEDIUM",
+  "completed": false
+}
+```
+- Success: `201 Created`
+```json
+{
+  "id": "653a1e3b...",
+  "title": "Finish README",
+  "description": "Write the README for TaskManagerAPI",
+  "dueDate": "2025-11-01T12:00:00Z",
+  "priority": "MEDIUM",
+  "completed": false,
+  "createdAt": "2025-10-20T18:00:00Z",
+  "updatedAt": "2025-10-20T18:00:00Z"
+}
+```
 
-  Success response (200 OK):
-  [
-    { "id": "...", "title": "...", ... },
-    ...
-  ]
+### List Tasks (pagination & filter)
+- Method: `GET`
+- URL: `/api/tasks?page=0&size=20&completed=false`
+- Success: `200 OK` — returns an array or page object depending on your implementation
 
-- Get a single task by id
-  GET /api/tasks/{id}
+### Get Task by ID
+- Method: `GET`
+- URL: `/api/tasks/{id}`
+- Success: `200 OK` or `404 Not Found`
 
-- Update a task (partial or full)
-  PUT /api/tasks/{id}
-  PATCH /api/tasks/{id}
+### Update Task (full)
+- Method: `PUT`
+- URL: `/api/tasks/{id}`
+- Body: full task payload (same as create)
+- Success: `200 OK`
 
-- Delete a task
-  DELETE /api/tasks/{id}
+### Patch Task (partial)
+- Method: `PATCH`
+- URL: `/api/tasks/{id}`
+- Body: partial JSON with fields to update
+- Success: `200 OK`
 
-Example curl (create)
-curl -X POST "http://localhost:8080/api/tasks" \
+### Delete Task
+- Method: `DELETE`
+- URL: `/api/tasks/{id}`
+- Success: `204 No Content`
+
+#### Example curl (create)
+```bash
+curl -s -X POST "http://localhost:8080/api/tasks" \
   -H "Content-Type: application/json" \
   -d '{"title":"Finish README","description":"Write README","priority":"HIGH"}'
+```
 
-Authentication & Authorization
-- If this repository includes authentication (JWT/basic), follow the README in the project or check application.properties for security configuration.
-- If there is no auth configured, the API is public on the exposed endpoints — protect it before deploying to production.
+---
 
-Postman collection
-- Import the provided Postman collection (if included in repo as `postman_collection.json`) into Postman.
-- If a collection is not present, create a new collection with the endpoints above.
-- Use environment variables for baseUrl (http://localhost:8080) and token (if auth exists).
+## Data model (example)
 
-Data model (example Task document)
-A typical Task document persisted in MongoDB:
-
+Task document stored in MongoDB:
+```json
 {
   "id": "ObjectId",
   "title": "string",
@@ -176,89 +227,157 @@ A typical Task document persisted in MongoDB:
   "createdAt": "ISO-8601 datetime",
   "updatedAt": "ISO-8601 datetime"
 }
+```
 
-Repository & package layout (recommended / common)
-- src/main/java
-  - com.example.taskmanager
-    - controller  (REST controllers)
-    - service     (business logic)
-    - repository  (Spring Data MongoDB interfaces)
-    - model       (domain / DTOs)
-    - dto         (request/response models)
-    - config      (Mongo config, Swagger, etc.)
-- src/main/resources
-  - application.properties / application.yml
+Suggested DTOs / fields:
+- `TaskRequest` — title, description, dueDate, priority, completed
+- `TaskResponse` — id, all fields + timestamps
 
-Validation & error handling
-- Controllers should validate incoming payloads using javax.validation annotations (@Valid, @NotNull, @Size, etc.)
-- Errors should return consistent error response shape:
-  {
-    "timestamp": "2025-10-20T18:22:10Z",
-    "status": 400,
-    "error": "Bad Request",
-    "message": "title must not be blank",
-    "path": "/api/tasks"
-  }
+---
 
-Tests
-- Unit tests: Use JUnit 5 + Mockito for service and controller unit tests
-- Integration tests: Use @SpringBootTest and an embedded MongoDB (or Testcontainers) to test repository and controllers with real data
+## Validation & Error responses
+
+Use `javax.validation` annotations (e.g., `@NotBlank`, `@Size`, `@Future`).
+
+Standard error response format (example):
+```json
+{
+  "timestamp": "2025-10-20T18:22:10Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "title must not be blank",
+  "path": "/api/tasks"
+}
+```
+
+Implement a global `@ControllerAdvice` to map exceptions (ValidationException, ConstraintViolationException, EntityNotFoundException, etc.) to consistent HTTP responses.
+
+---
+
+## Testing
+
+- Unit tests: JUnit 5 + Mockito (services, controllers)
+- Integration tests: `@SpringBootTest` + Testcontainers (MongoDB) or embedded Mongo
 - Run tests:
-  mvn test
+```bash
+mvn test
+```
+Tip: use `mvn -DskipTests=false test` in CI to ensure tests run.
 
-Dockerizing the application (optional)
-- Build the jar:
-  mvn clean package
-- Example Dockerfile:
-  FROM eclipse-temurin:17-jre
-  ARG JAR_FILE=target/*.jar
-  COPY ${JAR_FILE} app.jar
-  ENTRYPOINT ["java","-jar","/app.jar"]
+---
 
-- Build & run:
-  docker build -t taskmanager-api .
-  docker run -e SPRING_DATA_MONGODB_URI='mongodb://host:27017/taskmanagerdb' -p 8080:8080 taskmanager-api
+## Dockerizing the application
 
-CI / CD suggestions
-- Use GitHub Actions to:
-  - Run mvn -B -DskipTests=false test
-  - Build artifact
-  - Optionally build Docker image and push to registry
-- Protect main branch and require PR reviews
+Example `Dockerfile`:
 
-Contributing
-- Fork the repo, create a feature branch: git checkout -b feat/your-feature
-- Run tests and linters locally
-- Open a PR with a clear description and test coverage for the change
-- Follow Java code style (formatting & linting) used in project (e.g., Google Java Style or project-specific)
+```dockerfile
+FROM eclipse-temurin:17-jre
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
 
-Troubleshooting
-- If the app fails to connect to MongoDB:
-  - Ensure MongoDB is running and accessible
-  - Check spring.data.mongodb.uri in application properties or env vars
-  - For authentication-enabled MongoDB clusters, include credentials in the URI
-- If port 8080 is already in use, change server.port in application.properties or run with -Dserver.port=9090
+Build & run (example):
+```bash
+mvn clean package
+docker build -t taskmanager-api .
+docker run -e SPRING_DATA_MONGODB_URI='mongodb://mongo:27017/taskmanagerdb' -p 8080:8080 taskmanager-api
+```
 
-Security notes before production
-- Add authentication (JWT or OAuth2)
-- Add input sanitization and rate limiting
-- Secure MongoDB (authentication, network access rules)
-- Use HTTPS via reverse proxy / load balancer
+Compose (app + Mongo):
+```yaml
+version: "3.8"
+services:
+  mongo:
+    image: mongo:6
+    ports: ["27017:27017"]
+  app:
+    image: taskmanager-api:latest
+    build: .
+    depends_on:
+      - mongo
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/taskmanagerdb
+    ports:
+      - "8080:8080"
+```
 
-License
-Specify your license (for example MIT). If none present, add one to the repo.
+---
 
-Contact / Author
-- Author: MokshagnaBhuvan
+## CI / CD suggestions
+A simple GitHub Actions workflow:
+- `on: [push, pull_request]`
+- Steps:
+  - Checkout
+  - Set up JDK 17
+  - Cache Maven
+  - mvn -B -DskipTests=false test
+  - mvn -B package (optional publish artifact)
+  - (optional) Build & push Docker image to registry
+
+Protect `main` with required PR reviews and passing checks.
+
+---
+
+## Postman & OpenAPI
+- Provide a Postman collection (`postman_collection.json`) for manual testing — store it in the repo.
+- Better: expose OpenAPI/Swagger via `springdoc-openapi` to generate an interactive API doc at `/swagger-ui.html` or `/swagger-ui/index.html`.
+- Use environment variables in Postman: `baseUrl = http://localhost:8080`.
+
+---
+
+## Troubleshooting
+
+- App fails to connect to MongoDB:
+  - Verify `spring.data.mongodb.uri`
+  - Confirm Mongo is running on the configured host/port
+  - Inspect logs for connection exceptions
+
+- Port 8080 in use:
+  - Use `-Dserver.port=9090` or set `server.port` in `application.properties`
+
+- Unexpected validation errors:
+  - Check DTO validation annotations
+  - Check global exception handler mapping
+
+---
+
+## Contributing
+1. Fork the repo
+2. Create a branch:
+```bash
+git checkout -b feat/your-feature
+```
+3. Implement changes and tests
+4. Run `mvn test` locally
+5. Open a Pull Request with an explanation and test coverage
+
+Guidelines:
+- Keep controllers thin; put business logic in services
+- Add unit/integration tests for behavior
+- Follow project's code style (use an automatic formatter)
+
+---
+
+## License & Contact
+- License: Add a LICENSE file (MIT recommended if you want permissive license)
+- Author / Maintainer: MokshagnaBhuvan
 - Repo: https://github.com/MokshagnaBhuvan/TaskManagerAPI_Task1
 
-Appendix — Quick checklist for maintainers
-- [ ] Confirm Java version in pom.xml (update README accordingly)
-- [ ] Add Postman collection or OpenAPI/Swagger spec to repo
-- [ ] Add sample .env.example or instructions for secrets/URIs
-- [ ] Add Dockerfile & docker-compose for app + MongoDB (if desired)
-- [ ] Add CI config (GitHub Actions) for tests & build
+---
 
-If you want, I can:
-- generate a ready-to-commit README.md that exactly matches the project's code (I can inspect the repo for accurate package names, port, endpoints and example responses) — tell me and I'll fetch files and produce a final version matched to the code.
-- create Postman collection or OpenAPI spec based on actual controllers in the repository.
+## Appendix — Checklist for maintainers
+- [ ] Confirm Java version in `pom.xml`
+- [ ] Add `postman_collection.json` or OpenAPI spec
+- [ ] Provide example `.env.example` with `SPRING_DATA_MONGODB_URI`
+- [ ] Add GitHub Actions workflow for CI
+- [ ] Add Docker Compose for app + Mongo for easier local environment
+
+---
+
+If you'd like, I can:
+- Inspect the repository and produce a README that matches package names, exact endpoints and sample responses taken from your code.
+- Generate a Postman collection or an OpenAPI spec from your controllers automatically.
+- Create a ready-to-commit `README.md` and open a PR with it.
+Which would you prefer next?
+```
