@@ -1,4 +1,4 @@
-```markdown
+
 # Task Manager API (Task1)
 
 A lightweight, production-ready RESTful Task Management API built with Java, Spring Boot, Maven and MongoDB.  
